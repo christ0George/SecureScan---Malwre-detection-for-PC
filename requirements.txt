@@ -1,0 +1,4 @@
+Flask==2.2.5
+watchdog==2.3.0
+python-magic==0.4.27
+pyclamd==0.4.0

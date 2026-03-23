@@ -1,0 +1,28 @@
+#to create a Venv
+python -m venv venv
+│      │     │
+│      │     └── folder name for virtual environment
+│      └──────── Python's built-in virtual environment module
+└────────────── run Python
+
+
+
+
+#To activte virtual enviornment
+.\venv\Scripts\Activate
+
+
+### TOo start running webpage:
+pyhton app.py
+
+python scanner_service.py status    # check if running
+python scanner_service.py stop      # stop it
+python scanner_service.py start     # start it
+python scanner_service.py restart   # restart after code changes
+python scanner_service.py remove    # uninstall completely
+
+
+
+
+###### if you ever update scanner.py, you'll need to restart the service for changes to take effect since it loads the module once at startup: ####
+python scanner_service.py restart

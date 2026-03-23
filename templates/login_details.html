@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Activity - SecureScan</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    .login-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    .page-header {
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.75rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0;
+    }
+
+    .page-header .material-icons {
+      color: var(--primary);
+      font-size: 2rem;
+    }
+
+    .back-link {
+      text-decoration: none;
+      color: var(--text-secondary);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+    }
+
+    .back-link:hover {
+      background: var(--dark-hover);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .info-card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .info-card h2 {
+      font-size: 1.25rem;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .info-card h2 .material-icons {
+      color: var(--primary);
+      font-size: 1.5rem;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .info-value {
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .pc-name {
+      background: var(--dark-elevated);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      color: var(--primary);
+      border: 1px solid var(--border);
+    }
+
+    .attempts-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .attempts-table th,
+    .attempts-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .attempts-table th {
+      background: var(--dark-elevated);
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+
+    .attempts-table tbody tr:hover {
+      background: var(--dark-elevated);
+    }
+
+    .attempts-table td:first-child {
+      color: var(--text-primary);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state .material-icons {
+      font-size: 4rem;
+      color: var(--success);
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+
+    .search-container {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .date-input {
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      font-size: 1rem;
+      flex: 1;
+      max-width: 250px;
+    }
+
+    .btn-search {
+      padding: 0.75rem 1.5rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn-search:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .info-value {
+        width: 100%;
+      }
+
+      .attempts-table {
+        font-size: 0.85rem;
+      }
+
+      .attempts-table th,
+      .attempts-table td {
+        padding: 0.75rem 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <!-- Header -->
+    <div class="page-header">
+      <h1>
+        <i class="material-icons">login</i>
+        Login Activity
+      </h1>
+      <a href="/" class="back-link">
+        <i class="material-icons">arrow_back</i>
+        Back to Dashboard
+      </a>
+    </div>
+
+    <!-- PC Information -->
+    <div class="info-card">
+      <h2>
+        <i class="material-icons">computer</i>
+        PC Information
+      </h2>
+
+      <div class="info-row">
+        <span class="info-label">Computer Name</span>
+        <span class="info-value">
+          <span class="pc-name">{{ login_data.pc_name }}</span>
+        </span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Current User</span>
+        <span class="info-value">
+          <span class="pc-name">{{ login_data.current_user }}</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Login Security -->
+    <div class="info-card">
+      <h2>
+        <i class="material-icons">shield</i>
+        Login Security
+      </h2>
+
+      <div class="info-row">
+        <span class="info-label">Last Successful Login</span>
+        <span class="info-value">
+          {{ login_data.last_login }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Recent Login Activity (Last 5) -->
+    <div class="info-card">
+      <h2>
+        <i class="material-icons">history</i>
+        Recent Login Activity
+      </h2>
+
+      {% if login_data.recent_logins and login_data.recent_logins|length > 0 %}
+        <table class="attempts-table">
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Username</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for login in login_data.recent_logins %}
+            <tr>
+              <td>{{ login.time }}</td>
+              <td>{{ login.username }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <i class="material-icons">event_note</i>
+          <p><strong>No recent login data available</strong></p>
+          <p style="font-size: 0.9rem;">Run as administrator to view login history</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Search Login Activity by Date -->
+    <div class="info-card">
+      <h2>
+        <i class="material-icons">calendar_today</i>
+        Search Login Activity by Date
+      </h2>
+      
+      <div class="search-container">
+        <input type="date" 
+               id="activityDate" 
+               class="date-input"
+               value="{{ current_date }}" 
+               max="{{ current_date }}">
+        <button onclick="loadLoginActivity()" class="btn-search">
+          <i class="material-icons">search</i>
+          Search
+        </button>
+      </div>
+      
+      <div id="activityResults">
+        <div class="empty-state" id="noActivityMessage">
+          <i class="material-icons">event_note</i>
+          <p><strong>Select a date to view login activity</strong></p>
+          <p>Choose a date and click "Search" to see all logins for that day</p>
+        </div>
+        <table class="attempts-table" id="activityTable" style="display: none;">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Username</th>
+              <th>Domain</th>
+            </tr>
+          </thead>
+          <tbody id="activityTableBody">
+            <!-- Will be populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if login_data.error %}
+    <div class="info-card">
+      <h2>
+        <i class="material-icons">error</i>
+        Notice
+      </h2>
+      <p style="color: var(--text-secondary); padding: 1rem 0;">{{ login_data.error }}</p>
+      <p style="color: var(--text-secondary); font-size: 0.9rem;">
+        <strong>Note:</strong> Some information requires administrator privileges to view. Run the application as administrator for complete details.
+      </p>
+    </div>
+    {% endif %}
+
+    <footer>
+      <p>SecureScan v1.0.0 &copy; 2025 | Login Activity Monitor</p>
+    </footer>
+  </div>
+
+  <script>
+    // Track displayed times to prevent duplicates
+    let displayedTimes = new Set();
+
+    function loadLoginActivity() {
+      const dateInput = document.getElementById('activityDate');
+      const table = document.getElementById('activityTable');
+      const tableBody = document.getElementById('activityTableBody');
+      const noActivityMessage = document.getElementById('noActivityMessage');
+      const searchBtn = document.querySelector('.btn-search');
+      
+      // Reset displayed times for new search
+      displayedTimes.clear();
+      
+      // Show loading state
+      searchBtn.innerHTML = '<span class="loading-spinner"></span> Loading...';
+      searchBtn.disabled = true;
+      noActivityMessage.innerHTML = '<i class="material-icons">hourglass_empty</i><p><strong>Loading login data...</strong></p>';
+      noActivityMessage.style.display = 'block';
+      table.style.display = 'none';
+      
+      // Make API call
+      fetch(`/api/login_activity?date=${dateInput.value}`)
+        .then(response => {
+          if (!response.ok) {
+            return response.json().then(err => {
+              throw new Error(err.error || 'Failed to load data');
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          tableBody.innerHTML = '';
+          
+          if (data && data.length > 0) {
+            // Filter out duplicates based on time (minute precision)
+            const uniqueActivities = [];
+            const seenTimes = new Set();
+            
+            data.forEach(activity => {
+              if (activity.Time) {
+                // Use minute precision to identify duplicates
+                const timeKey = activity.Time.substring(0, 16); // yyyy-MM-dd HH:mm
+                
+                if (!seenTimes.has(timeKey)) {
+                  seenTimes.add(timeKey);
+                  uniqueActivities.push(activity);
+                }
+              }
+            });
+            
+            if (uniqueActivities.length > 0) {
+              uniqueActivities.forEach(activity => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                  <td>${formatDateTime(activity.Time)}</td>
+                  <td>${activity.Username || 'N/A'}</td>
+                  <td>${activity.Domain || 'Local'}</td>
+                `;
+                tableBody.appendChild(row);
+              });
+              
+              table.style.display = 'table';
+              noActivityMessage.style.display = 'none';
+            } else {
+              noActivityMessage.innerHTML = `
+                <i class="material-icons">event_busy</i>
+                <p><strong>No login activity found</strong></p>
+                <p>No login records found for ${formatDate(dateInput.value)}</p>
+              `;
+              noActivityMessage.style.display = 'block';
+              table.style.display = 'none';
+            }
+          } else {
+            noActivityMessage.innerHTML = `
+              <i class="material-icons">event_busy</i>
+              <p><strong>No login activity found</strong></p>
+              <p>No login records found for ${formatDate(dateInput.value)}</p>
+            `;
+            noActivityMessage.style.display = 'block';
+            table.style.display = 'none';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          if (error.message.includes('Administrator rights')) {
+            noActivityMessage.innerHTML = `
+              <i class="material-icons" style="color: var(--warning);">admin_panel_settings</i>
+              <p><strong>Administrator Rights Required</strong></p>
+              <p>Run the application as administrator to view login history</p>
+            `;
+          } else {
+            noActivityMessage.innerHTML = `
+              <i class="material-icons" style="color: var(--danger);">error_outline</i>
+              <p><strong>Error loading data</strong></p>
+              <p>${error.message || 'Failed to load login activity'}</p>
+            `;
+          }
+          noActivityMessage.style.display = 'block';
+          table.style.display = 'none';
+        })
+        .finally(() => {
+          // Restore button
+          searchBtn.innerHTML = '<i class="material-icons">search</i> Search';
+          searchBtn.disabled = false;
+        });
+    }
+
+    function formatDateTime(dateTimeStr) {
+      if (!dateTimeStr) return 'N/A';
+      try {
+        const date = new Date(dateTimeStr);
+        return date.toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        });
+      } catch (e) {
+        return dateTimeStr;
+      }
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return 'the selected date';
+      try {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      } catch (e) {
+        return dateStr;
+      }
+    }
+
+    // Allow Enter key to trigger search
+    document.getElementById('activityDate').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        loadLoginActivity();
+      }
+    });
+  </script>
+</body>
+</html>

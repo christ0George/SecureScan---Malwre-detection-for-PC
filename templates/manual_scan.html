@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual Folder Scan - SecureScan</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    .manual-scan-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    .page-header {
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.75rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0;
+    }
+
+    .scan-input-section {
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .folder-input-group {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      align-items: flex-end;
+    }
+
+    .input-wrapper {
+      flex: 1;
+    }
+
+    .input-wrapper label {
+      display: block;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .folder-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-family: 'Courier New', monospace;
+    }
+
+    .folder-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn-scan {
+      padding: 0.75rem 2rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+      font-size: 1rem;
+    }
+
+    .btn-scan:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .btn-scan:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .scan-progress {
+      display: none;
+      background: rgba(0, 123, 255, 0.1);
+      border: 1px solid var(--primary);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 1rem;
+      text-align: center;
+      color: var(--primary);
+    }
+
+    .scan-progress.active {
+      display: block;
+    }
+
+    .scan-results {
+      display: none;
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .scan-results.active {
+      display: block;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .results-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--dark-elevated);
+      padding: 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      color: var(--text-primary);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .stat-value.danger {
+      color: var(--danger);
+    }
+
+    .stat-value.success {
+      color: var(--success);
+    }
+
+    /* ── Threat cards ───────────────────────────────────────── */
+    .infected-files-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+
+    .threat-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px 14px 20px;
+      border-radius: 10px;
+      background: var(--dark-elevated);
+      border: 1px solid #3a1a1a;
+      overflow: hidden;
+      transition: border-color .2s, box-shadow .2s, transform .15s;
+    }
+
+    .threat-card:hover {
+      border-color: #d94f4f;
+      box-shadow: 0 0 0 3px rgba(217, 79, 79, .1), 0 4px 16px rgba(0, 0, 0, .3);
+      transform: translateY(-1px);
+    }
+
+    .threat-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      border-radius: 4px 0 0 4px;
+      background: linear-gradient(180deg, #e05252, #ff8c42);
+    }
+
+    /* CHECKBOX FIX — revert all inherited CSS, force native browser checkbox */
+    .file-checkbox {
+      all: revert !important;
+      width: 18px !important;
+      height: 18px !important;
+      min-width: 18px !important;
+      flex-shrink: 0 !important;
+      cursor: pointer !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      appearance: checkbox !important;
+      -webkit-appearance: checkbox !important;
+      accent-color: #e05252 !important;
+      display: inline-block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: static !important;
+      pointer-events: auto !important;
+    }
+
+    .threat-card .tc-icon {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(224, 82, 82, .12);
+      border: 1px solid rgba(224, 82, 82, .25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .threat-card .tc-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .threat-card .tc-filename {
+      font-size: .93rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .threat-card .tc-path {
+      font-size: .75rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: 'Courier New', monospace;
+      opacity: .75;
+    }
+
+    .threat-card .tc-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .tc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: .71rem;
+      font-weight: 600;
+    }
+
+    .tc-badge-threat {
+      background: rgba(224, 82, 82, .18);
+      color: #e05252;
+      border: 1px solid rgba(224, 82, 82, .35);
+    }
+
+    .tc-badge-size {
+      background: rgba(255, 255, 255, .05);
+      color: #999;
+      border: 1px solid rgba(255, 255, 255, .1);
+    }
+
+    /* ── Summary banner ─────────────────────────────────────── */
+    .scan-summary-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      background: rgba(224, 82, 82, .08);
+      border: 1px solid rgba(224, 82, 82, .3);
+      color: #e05252;
+      font-weight: 600;
+      font-size: .92rem;
+      margin-bottom: 1rem;
+    }
+
+    .scan-summary-banner .ssb-count {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-right: 4px;
+    }
+
+    /* ── Action buttons ─────────────────────────────────────── */
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn-no-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.4rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-left: auto;
+    }
+
+    .btn-no-action:hover {
+      background: var(--dark-elevated);
+      border-color: var(--text-secondary);
+      color: var(--text-primary);
+    }
+
+    /* ── Reports table ──────────────────────────────────────── */
+    .reports-section {
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+    }
+
+    .reports-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .reports-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .reports-table th,
+    .reports-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .reports-table th {
+      background: var(--dark-elevated);
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+
+    .reports-table tbody tr:hover {
+      background: var(--dark-elevated);
+    }
+
+    .action-deleted {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .action-kept {
+      color: #ffa834;
+      font-weight: 600;
+    }
+
+    .expand-btn {
+      background: none;
+      border: none;
+      color: var(--primary);
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .file-details-row {
+      display: none;
+      background: var(--dark-elevated);
+    }
+
+    .file-details-row.expanded {
+      display: table-row;
+    }
+
+    .file-details-cell {
+      padding: 1rem 2rem;
+    }
+
+    .file-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .file-list li {
+      padding: 0.5rem 0;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="manual-scan-container">
+
+    <div class="page-header">
+      <h1>
+        <i class="material-icons">folder_open</i>
+        Manual Folder Scan
+      </h1>
+      <a href="/" class="back-link">
+        <i class="material-icons">arrow_back</i>
+        Back to Dashboard
+      </a>
+    </div>
+
+    <div class="scan-input-section">
+      <h2><i class="material-icons">search</i> Scan a Folder</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+        Enter the full path of the folder you want to scan for threats. All files in the folder and subfolders will be
+        scanned.
+      </p>
+      <div class="folder-input-group">
+        <div class="input-wrapper">
+          <label for="folder-path">Folder Path</label>
+          <input type="text" id="folder-path" class="folder-input"
+            placeholder="e.g., D:\Downloads or C:\Users\YourName\Documents" value="D:\">
+        </div>
+        <button id="btn-start-scan" class="btn-scan">
+          <i class="material-icons">search</i>
+          Start Scan
+        </button>
+      </div>
+      <div id="scan-progress" class="scan-progress">
+        <i class="material-icons" style="font-size: 2rem; animation: spin 2s linear infinite;">autorenew</i>
+        <p style="margin: 0.5rem 0 0 0; font-weight: 600;">Scanning folder...</p>
+        <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem;">This may take a few minutes depending on folder size</p>
+      </div>
+    </div>
+
+    <!-- Scan Results -->
+    <div id="scan-results" class="scan-results">
+      <div class="results-header">
+        <h2><i class="material-icons">bug_report</i> Scan Results</h2>
+        <button id="btn-close-results" class="btn icon" style="background: var(--dark-elevated);">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <div class="results-stats">
+        <div class="stat-card">
+          <div class="stat-label">Folder Scanned</div>
+          <div class="stat-value" id="stat-folder" style="font-size: 1rem; word-break: break-all;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Files</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Files Scanned</div>
+          <div class="stat-value success" id="stat-scanned">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Infected Files</div>
+          <div class="stat-value danger" id="stat-infected">0</div>
+        </div>
+      </div>
+
+      <div id="infected-files-container" style="display: none;">
+        <h3 style="color: var(--danger); display: flex; align-items: center; gap: 0.5rem;">
+          <i class="material-icons">warning</i>
+          Infected Files Detected
+        </h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+          Check the files you want to delete, then click <strong>Delete Selected</strong>.
+          To skip and close, click <strong>Continue with No Action</strong>.
+        </p>
+
+        <div id="scan-summary-banner"></div>
+        <div class="infected-files-list" id="infected-files-list"></div>
+
+        <div class="action-buttons">
+          <!-- Select All -->
+          <button id="btn-select-all" class="btn" style="background: var(--dark-elevated);">
+            <i class="material-icons">check_box</i>
+            Select All
+          </button>
+
+          <!-- Delete Selected -->
+          <button id="btn-delete-selected" class="btn-danger">
+            <i class="material-icons">delete_forever</i>
+            Delete Selected Files
+          </button>
+
+          <!-- Continue with No Action — saves log, closes panel -->
+          <button id="btn-no-action" class="btn-no-action">
+            <i class="material-icons">arrow_forward</i>
+            Continue with No Action
+          </button>
+        </div>
+      </div>
+
+      <div id="clean-result" style="display: none; text-align: center; padding: 2rem;">
+        <i class="material-icons" style="font-size: 4rem; color: var(--success);">check_circle</i>
+        <h3 style="color: var(--success); margin: 1rem 0 0.5rem 0;">All Clean!</h3>
+        <p style="color: var(--text-secondary);">No threats were found in the scanned folder.</p>
+      </div>
+    </div>
+
+    <!-- Recent Scan Reports -->
+    <div class="reports-section">
+      <div class="reports-header">
+        <h2><i class="material-icons">history</i> Recent Scan Reports</h2>
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="btn-refresh-reports" class="btn icon" title="Refresh">
+            <i class="material-icons">refresh</i>
+          </button>
+          <button id="btn-clear-reports" class="btn icon" title="Clear Reports">
+            <i class="material-icons">clear_all</i>
+          </button>
+        </div>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="reports-table">
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Folder Path</th>
+              <th>Infected Files</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="reports-table-body">
+            <tr class="empty-state">
+              <td colspan="4">No scan reports yet. Start scanning folders to see reports here.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var currentScanData = null;
+
+    // ── HTML escape helper ─────────────────────────────────────────────
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ── Toast notification — identical to dashboard.js showNotification ─
+    function showNotification(message, type) {
+      type = type || 'info';
+      var existing = document.querySelector('.toast');
+      if (existing) existing.remove();
+
+      var icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
+      var toast = document.createElement('div');
+      toast.className = 'toast ' + type + ' show';
+      toast.innerHTML = '<i class="material-icons">' + (icons[type] || 'info') + '</i><span>' + message + '</span>';
+      document.body.appendChild(toast);
+
+      setTimeout(function () {
+        toast.classList.remove('show');
+        setTimeout(function () { toast.remove(); }, 300);
+      }, 4000);
+    }
+
+    // ── Danger modal — identical to dashboard.js showDangerConfirmation ─
+    function showDangerConfirmation(title, message, confirmText, cancelText) {
+      return new Promise(function (resolve) {
+        var existing = document.querySelector('.danger-modal');
+        if (existing) existing.remove();
+
+        var modal = document.createElement('div');
+        modal.className = 'danger-modal';
+        modal.innerHTML =
+          '<div class="danger-modal-content">' +
+          '<div class="danger-modal-header">' +
+          '<i class="material-icons danger-icon">warning</i>' +
+          '<h3>' + title + '</h3>' +
+          '</div>' +
+          '<div class="danger-modal-body"><p>' + message + '</p></div>' +
+          '<div class="danger-modal-footer">' +
+          '<button class="btn btn-cancel">' + cancelText + '</button>' +
+          '<button class="btn btn-danger">' + confirmText + '</button>' +
+          '</div>' +
+          '</div>';
+
+        document.body.appendChild(modal);
+
+        modal.querySelector('.btn-cancel').onclick = function () { modal.remove(); resolve(false); };
+        modal.querySelector('.btn-danger').onclick = function () { modal.remove(); resolve(true); };
+        modal.onclick = function (e) { if (e.target === modal) { modal.remove(); resolve(false); } };
+
+        var escHandler = function (e) {
+          if (e.key === 'Escape') { modal.remove(); resolve(false); document.removeEventListener('keydown', escHandler); }
+        };
+        document.addEventListener('keydown', escHandler);
+      });
+    }
+
+    // ── Render threat cards ────────────────────────────────────────────
+    function renderInfectedFiles(infectedFiles) {
+      var list = document.getElementById('infected-files-list');
+      var banner = document.getElementById('scan-summary-banner');
+      list.innerHTML = banner.innerHTML = '';
+      if (!infectedFiles || !infectedFiles.length) return;
+
+      banner.innerHTML =
+        '<div class="scan-summary-banner">' +
+        '<span class="ssb-icon">🚨</span>' +
+        '<span><span class="ssb-count">' + infectedFiles.length + '</span>' +
+        ' threat' + (infectedFiles.length !== 1 ? 's' : '') + ' detected — select files to delete</span>' +
+        '</div>';
+
+      infectedFiles.forEach(function (f) {
+        var card = document.createElement('div');
+        card.className = 'threat-card';
+        card.innerHTML =
+          '<label style="display:contents;cursor:pointer;">' +
+          '<input type="checkbox" class="file-checkbox tc-check"' +
+          ' data-path="' + escHtml(f.path) + '"' +
+          ' data-filename="' + escHtml(f.filename) + '"' +
+          ' checked>' +
+          '</label>' +
+          '<div class="tc-icon">🦠</div>' +
+          '<div class="tc-body">' +
+          '<div class="tc-filename">' + escHtml(f.filename) + '</div>' +
+          '<div class="tc-path">' + escHtml(f.relative_path) + '</div>' +
+          '<div class="tc-badges">' +
+          '<span class="tc-badge tc-badge-threat">⚠ ' + escHtml(f.threat) + '</span>' +
+          '<span class="tc-badge tc-badge-size">📦 ' + (f.size / 1024).toFixed(1) + ' KB</span>' +
+          '</div>' +
+          '</div>';
+        list.appendChild(card);
+      });
+    }
+
+    function getSelectedFiles() {
+      var s = [];
+      document.querySelectorAll('.file-checkbox:checked').forEach(function (cb) {
+        s.push({ path: cb.dataset.path, filename: cb.dataset.filename });
+      });
+      return s;
+    }
+
+    function getAllFiles() {
+      var a = [];
+      document.querySelectorAll('.file-checkbox').forEach(function (cb) {
+        a.push({ path: cb.dataset.path, filename: cb.dataset.filename });
+      });
+      return a;
+    }
+
+    function closeResults() {
+      document.getElementById('scan-results').classList.remove('active');
+      currentScanData = null;
+    }
+
+    // ── SELECT ALL ─────────────────────────────────────────────────────
+    document.getElementById('btn-select-all').addEventListener('click', function () {
+      document.querySelectorAll('.file-checkbox').forEach(function (cb) { cb.checked = true; });
+    });
+
+    // ── DELETE SELECTED ────────────────────────────────────────────────
+    document.getElementById('btn-delete-selected').addEventListener('click', function () {
+      var selected = getSelectedFiles();
+      if (!selected.length) {
+        showNotification('No files selected. Use "Continue with No Action" to keep all files.', 'warning');
+        return;
+      }
+
+      showDangerConfirmation(
+        'Delete Infected Files?',
+        'You are about to permanently delete <strong>' + selected.length + '</strong> file(s). This action cannot be undone.',
+        'Delete Permanently',
+        'Cancel'
+      ).then(function (confirmed) {
+        if (!confirmed) return;
+
+        var btn = document.getElementById('btn-delete-selected');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="material-icons">hourglass_empty</i> Deleting...';
+
+        var folderPath = currentScanData ? currentScanData.folder_path : '';
+        showNotification('Deleting ' + selected.length + ' file(s)…', 'info');
+
+        fetch('/api/manual_scan/delete_files', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ files: selected, folder_path: folderPath, all_infected_files: getAllFiles() })
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="material-icons">delete_forever</i> Delete Selected Files';
+            if (data.status === 'success') {
+              showNotification('Deleted ' + data.deleted_count + ' of ' + (data.deleted_count + data.not_deleted_count) + ' file(s).', 'success');
+              setTimeout(function () { loadReports(); closeResults(); }, 2000);
+            } else {
+              showNotification('Error: ' + (data.error || 'Unknown error'), 'error');
+            }
+          })
+          .catch(function (e) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="material-icons">delete_forever</i> Delete Selected Files';
+            showNotification('Request failed: ' + e, 'error');
+          });
+      });
+    });
+
+    // ── CONTINUE WITH NO ACTION ────────────────────────────────────────
+    document.getElementById('btn-no-action').addEventListener('click', function () {
+      var allFiles = getAllFiles();
+      var folderPath = currentScanData ? currentScanData.folder_path : '';
+
+      fetch('/api/manual_scan/save_no_action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder_path: folderPath, all_infected_files: allFiles })
+      })
+        .then(function () {
+          showNotification('Report saved — no files were deleted.', 'info');
+          setTimeout(function () { loadReports(); closeResults(); }, 2000);
+        })
+        .catch(function () { closeResults(); });
+    });
+
+    // ── CLOSE (X) ──────────────────────────────────────────────────────
+    document.getElementById('btn-close-results').addEventListener('click', closeResults);
+
+    // ── SCAN ───────────────────────────────────────────────────────────
+    document.getElementById('btn-start-scan').addEventListener('click', function () {
+      var folderPath = document.getElementById('folder-path').value.trim();
+      if (!folderPath) {
+        showNotification('Please enter a folder path.', 'error');
+        return;
+      }
+
+      var btn = document.getElementById('btn-start-scan');
+      var progress = document.getElementById('scan-progress');
+      var results = document.getElementById('scan-results');
+
+      btn.disabled = true;
+      progress.classList.add('active');
+      results.classList.remove('active');
+
+      fetch('/api/manual_scan/scan_folder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder_path: folderPath })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          btn.disabled = false;
+          progress.classList.remove('active');
+
+          if (data.error) {
+            showNotification('Scan error: ' + data.error, 'error');
+            return;
+          }
+
+          currentScanData = { folder_path: data.folder_path, infected_files: data.infected_files || [] };
+
+          document.getElementById('stat-folder').textContent = data.folder_path || '-';
+          document.getElementById('stat-total').textContent = data.total_files || 0;
+          document.getElementById('stat-scanned').textContent = data.scanned_files || 0;
+          document.getElementById('stat-infected').textContent = data.infected_count || 0;
+
+          results.classList.add('active');
+
+          if (data.infected_files && data.infected_files.length) {
+            document.getElementById('infected-files-container').style.display = 'block';
+            document.getElementById('clean-result').style.display = 'none';
+            renderInfectedFiles(data.infected_files);
+            showNotification(data.infected_count + ' threat(s) found!', 'warning');
+          } else {
+            document.getElementById('infected-files-container').style.display = 'none';
+            document.getElementById('clean-result').style.display = 'block';
+            showNotification('Scan complete — no threats found.', 'success');
+          }
+          loadReports();
+        })
+        .catch(function (e) {
+          btn.disabled = false;
+          progress.classList.remove('active');
+          showNotification('Request failed: ' + e, 'error');
+        });
+    });
+
+    // ── LOAD REPORTS ───────────────────────────────────────────────────
+    function loadReports() {
+      fetch('/api/manual_scan/reports')
+        .then(function (r) { return r.json(); })
+        .then(function (reports) {
+          var tbody = document.getElementById('reports-table-body');
+          if (!reports || !reports.length) {
+            tbody.innerHTML = '<tr class="empty-state"><td colspan="4">No scan reports yet.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = '';
+          reports.forEach(function (report, idx) {
+            var date = new Date(report.timestamp * 1000).toLocaleString();
+            var rowId = 'report-detail-' + idx;
+            var row = document.createElement('tr');
+            row.innerHTML =
+              '<td>' + date + '</td>' +
+              '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escHtml(report.folder_path || '') + '">' + escHtml(report.folder_path || '-') + '</td>' +
+              '<td><span style="color:var(--danger);font-weight:600;">' + (report.total_infected || 0) + '</span></td>' +
+              '<td><button class="expand-btn" onclick="toggleDetail(\'' + rowId + '\',this)">' +
+              '<i class="material-icons">expand_more</i> Details</button></td>';
+            tbody.appendChild(row);
+
+            var det = document.createElement('tr');
+            det.id = rowId;
+            det.className = 'file-details-row';
+            var items = (report.files || []).map(function (f) {
+              var cls = f.action === 'deleted' ? 'action-deleted' : 'action-no-action';
+              return '<li><span>' + escHtml(f.filename || '-') + '</span>' +
+                '<span class="' + cls + '">' + escHtml(f.action || '-') + '</span></li>';
+            }).join('');
+            det.innerHTML = '<td colspan="4" class="file-details-cell"><ul class="file-list">' +
+              (items || '<li>No file details</li>') + '</ul></td>';
+            tbody.appendChild(det);
+          });
+        })
+        .catch(function (e) { console.error('Error loading reports:', e); });
+    }
+
+    function toggleDetail(rowId, btn) {
+      var row = document.getElementById(rowId);
+      if (!row) return;
+      row.classList.toggle('expanded');
+      var icon = btn.querySelector('.material-icons');
+      if (icon) icon.textContent = row.classList.contains('expanded') ? 'expand_less' : 'expand_more';
+    }
+
+    // ── CLEAR REPORTS ──────────────────────────────────────────────────
+    document.getElementById('btn-clear-reports').addEventListener('click', function () {
+      showDangerConfirmation(
+        'Clear All Reports?',
+        'Are you sure you want to clear all scan reports? This cannot be undone.',
+        'Clear All',
+        'Cancel'
+      ).then(function (confirmed) {
+        if (!confirmed) return;
+        fetch('/api/manual_scan/clear_reports', { method: 'POST' })
+          .then(function () {
+            showNotification('Reports cleared successfully', 'success');
+            loadReports();
+          })
+          .catch(function () { showNotification('Failed to clear reports', 'error'); });
+      });
+    });
+
+    document.getElementById('btn-refresh-reports').addEventListener('click', function () {
+      loadReports();
+      showNotification('Reports refreshed', 'info');
+    });
+
+    window.addEventListener('DOMContentLoaded', loadReports);
+  </script>
+</body>
+
+</html>
